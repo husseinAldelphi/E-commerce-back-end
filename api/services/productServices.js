@@ -28,8 +28,7 @@ exports.getProdcuts = asyncHandler(async (req, res) => {
     /\b(gte|gt|lte|lt)\b/g,
     (match) => `$${match}`
   );
-  console.log(queryStirngObject);
-  console.log(JSON.parse(queryString));
+
   //* 2) Pagination
   //  req.query.page * 1 to convert to a number because it is sended as string
   const page = req.query.page * 1 || 1;
@@ -46,10 +45,20 @@ exports.getProdcuts = asyncHandler(async (req, res) => {
   if (req.query.sort) {
     // price, -sold - => [price, -sold]=> price -sold
     const sortBy = req.query.sort.split(",").join(" ");
+    console.log(`${sortBy}`.red);
     //! sort(price sold) // without comma , 👇
     mongooseQuery = mongooseQuery.sort(sortBy);
   } else mongooseQuery = mongooseQuery.sort("createdAt");
-
+  //* f) feildes limiting
+  if (req.query.fields) {
+    let fields = req.query.fields.split(",").join(" ");
+    fields += " -__v";
+    console.log(`${fields}`.red);
+    //? if you want to response all fields except title enter it like -title
+    mongooseQuery = mongooseQuery.select(fields);
+  } else {
+    mongooseQuery = mongooseQuery.select("-__v");
+  }
   const products = await mongooseQuery;
   res.status(200).json({ result: products.length, page, data: products });
 });
