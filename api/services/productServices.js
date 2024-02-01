@@ -20,7 +20,7 @@ exports.createProduct = asyncHandler(async (req, res) => {
 exports.getProdcuts = asyncHandler(async (req, res) => {
   //* 1) Filtering products
   const queryStirngObject = { ...req.query };
-  const excludeFields = ["page", "limit", "sort", "fields"];
+  const excludeFields = ["page", "limit", "sort", "fields","keyword"];
   excludeFields.forEach((field) => delete queryStirngObject[field]);
   // apply filteration using [get,gt,lte,lt]
   let queryString = JSON.stringify(queryStirngObject);
@@ -49,7 +49,7 @@ exports.getProdcuts = asyncHandler(async (req, res) => {
     //! sort(price sold) // without comma , 👇
     mongooseQuery = mongooseQuery.sort(sortBy);
   } else mongooseQuery = mongooseQuery.sort("createdAt");
-  //* f) feildes limiting
+  //* 4) feildes limiting
   if (req.query.fields) {
     let fields = req.query.fields.split(",").join(" ");
     fields += " -__v";
@@ -58,6 +58,21 @@ exports.getProdcuts = asyncHandler(async (req, res) => {
     mongooseQuery = mongooseQuery.select(fields);
   } else {
     mongooseQuery = mongooseQuery.select("-__v");
+  }
+  //* 5) search feature
+  if (req.query.keyword) {
+    const { keyword } = req.query;
+    // const pattern = new RegExp(`\\b${keyword}`, 'i');
+    const query = {
+      $or: [
+        { title: { $regex: keyword } },
+        { description: { $regex: keyword } },
+      ],
+    };
+
+    mongooseQuery = await mongooseQuery.find(query);
+    console.log(`${JSON.stringify(query)}`.red);
+    // console.log(`${mongooseQuery}`.red);
   }
   const products = await mongooseQuery;
   res.status(200).json({ result: products.length, page, data: products });
