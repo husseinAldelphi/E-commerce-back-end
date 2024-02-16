@@ -1,8 +1,9 @@
 const { default: slugify } = require("slugify");
 const asyncHandler = require("express-async-handler");
-const Product = require("../models/productModel");
+const productModel = require("../models/productModel");
 const ApiErrors = require("../utils/api_error");
 const ApiFeatures = require("../utils/apiFeatures");
+const factory = require("./handlersFactory");
 require("colors");
 
 // @desc   Create prodcut
@@ -10,7 +11,7 @@ require("colors");
 // @access Private
 exports.createProduct = asyncHandler(async (req, res) => {
   req.body.slug = slugify(req.body.title);
-  const product = await Product.create(req.body);
+  const product = await productModel.create(req.body);
 
   res.status(201).json({ data: product });
 });
@@ -20,13 +21,13 @@ exports.createProduct = asyncHandler(async (req, res) => {
 // @access Public
 exports.getProdcuts = asyncHandler(async (req, res) => {
   // build query
-  const documentCounts = await Product.countDocuments();
-  console.log(documentCounts);
-  const apiFeatures = new ApiFeatures(Product.find(), req.query)
-    .paginate(documentCounts) 
+  const documentCounts = await productModel.countDocuments();
+
+  const apiFeatures = new ApiFeatures(productModel.find(), req.query)
+    .paginate(documentCounts)
     .filter()
     .sort()
-    .search()
+    .search("Products")
     .limitFields();
   // Excute query
   const { mongooseQuery, paginationResults } = apiFeatures;
@@ -42,7 +43,7 @@ exports.getProdcuts = asyncHandler(async (req, res) => {
 exports.getProduct = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const product = await Product.findById(id).populate({
+  const product = await productModel.findById(id).populate({
     path: "category",
     select: "name -_id",
   });
@@ -56,31 +57,9 @@ exports.getProduct = asyncHandler(async (req, res, next) => {
 // @desc    Update prodcut
 // @route   Put /api/v1/products/:id
 // @access  Private
-exports.updateProdcut = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  if (req.body.title) {
-    req.body.slug = slugify(req.body.title);
-  }
-
-  const prodcut = await Product.findByIdAndUpdate({ _id: id }, req.body, {
-    new: true,
-  });
-  if (!prodcut) {
-    return next(new ApiErrors(`No prodcut for this ${id}`, 404));
-  }
-  res.status(200).json({ date: prodcut });
-});
+exports.updateProdcut = factory.updateOne(productModel);
 
 // @desc    Delete prodcut
 // @route   Delete /api/v1/products/:id
 // @access  Private
-exports.deleteProduct = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const prodcut = await Product.findByIdAndRemove(id);
-  if (!prodcut) {
-    return next(new ApiErrors(`No prodcut for this ${id}`, 404));
-  }
-  res.send({
-    message: `product id ${id} deleted`,
-  });
-});
+exports.deleteProduct = factory.deleteOne(productModel);

@@ -1,12 +1,14 @@
 const { default: slugify } = require("slugify");
 const asyncHandler = require("express-async-handler");
 const ApiErrors = require("../utils/api_error");
-const brandModel  = require("../models/brandModel")
+const brandModel = require("../models/brandModel");
+const ApiFeatures = require("../utils/apiFeatures");
+const factory = require("./handlersFactory");
 // @desc   Create brand
 // @route  Post /api/v1/brands
 // @access Private
-exports.creatBrand = asyncHandler(async (req, res) => {
-  const {name} = req.body;
+exports.createBrand = asyncHandler(async (req, res) => {
+  const { name } = req.body;
 
   const brand = await brandModel.create({ name, slug: slugify(name) });
   res.status(201).json({ data: brand });
@@ -16,14 +18,21 @@ exports.creatBrand = asyncHandler(async (req, res) => {
 // @route  Get /api/v1/brands
 // @access Public
 exports.getBrands = asyncHandler(async (req, res) => {
-  // pagination
-  //  req.query.page * 1 to convert to a number because it is sended as string
-  const page = req.query.page * 1 || 1;
-  const limit = req.query.limit * 1 || 5;
-  const skip = (page - 1) * limit;
+  // build query
+  const documentCounts = await brandModel.countDocuments();
 
-  const brands = await brandModel.find({}).skip(skip).limit(limit);
-  res.status(200).json({ result: brands.length, page, data: brands });
+  const apiFeatures = new ApiFeatures(brandModel.find(), req.query)
+    .paginate(documentCounts)
+    .filter()
+    .sort()
+    .search()
+    .limitFields();
+  // Excute query
+  const { mongooseQuery, paginationResults } = apiFeatures;
+  const brands = await mongooseQuery;
+  res
+    .status(200)
+    .json({ result: brands.length, paginationResults, data: brands });
 });
 
 // @desc Get spesfic brand
@@ -34,7 +43,6 @@ exports.getBrand = asyncHandler(async (req, res, next) => {
 
   const brand = await brandModel.findById(id);
   if (!brand) {
-    // res.status(404).json({ msg: `No brand for this ${id}` });
     return next(new ApiErrors(`No brand for this ${id}`, 404));
   }
   res.status(200).json({ date: brand });
@@ -43,28 +51,9 @@ exports.getBrand = asyncHandler(async (req, res, next) => {
 // @desc    Update brand
 // @route   Put /api/v1/brands/:id
 // @access  Private
-exports.updateBrand = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const { name } = req.body;
-  const brand = await brandModel.findByIdAndUpdate(
-    { _id: id },
-    { name, slug: slugify(name) },
-    { new: true }
-  );
-  if (!brand) {
-    return next(new ApiErrors(`No brand for this ${id}`, 404));
-  }
-  res.status(200).json({ date: brand });
-});
+exports.updateBrand =  factory.updateOne(brandModel)
 
 // @desc    Delet brand
 // @route   Delete /api/v1/brands/:id
 // @access  Private
-exports.deleteBrand = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const brand = await brandModel.findByIdAndRemove(id);
-  if (!brand) {
-    return next(new ApiErrors(`No brand for this ${id}`, 404));
-  }
-  res.status(204).send();
-});
+exports.deleteBrand = factory.deleteOne(brandModel);

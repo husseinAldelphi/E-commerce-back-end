@@ -8,7 +8,7 @@ const {
 
 const {
   getBrands,
-  creatBrand,
+  createBrand,
   getBrand,
   updateBrand,
   deleteBrand,
@@ -17,7 +17,7 @@ const {
 const router = express.Router();
 
 // اختصار لان كلاهما نفس الرابط
-router.route("/").get(getBrands).post(createBrandValidator, creatBrand);
+router.route("/").get(getBrands).post(createBrandValidator, createBrand);
 router
   .route("/:id")
   .get(getBrandValidator, getBrand)

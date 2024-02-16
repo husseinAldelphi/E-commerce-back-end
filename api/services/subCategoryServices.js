@@ -3,6 +3,8 @@ const { default: slugify } = require("slugify");
 const asyncHandler = require("express-async-handler");
 const subCatetegoryModel = require("../models/subCategoryModel");
 const ApiErrors = require("../utils/api_error");
+const ApiFeatures = require("../utils/apiFeatures");
+const factory = require("./handlersFactory");
 
 exports.setCategoryIdToBody = (req, res, next) => {
   if (!req.body.category) req.body.category = req.params.categoryId;
@@ -38,23 +40,23 @@ exports.creatSubCategory = asyncHandler(async (req, res) => {
 // @route  Get /api/v1/subcategories
 // @access Public
 exports.getSubCategoris = asyncHandler(async (req, res) => {
-  // pagination
-  //  req.query.page * 1 to convert to a number because it is sended as string
-  const page = req.query.page * 1 || 1;
-  const limit = req.query.limit * 1 || 5;
-  const skip = (page - 1) * limit;
+  // build query
+  const documentCounts = await subCatetegoryModel.countDocuments();
 
-  const subcategories = await subCatetegoryModel
-    .find(req.filterObject)
-    .skip(skip)
-    .limit(limit);
-
-  // .populate({ path: "category", select: "name" });
-  // show only name without _id use -_id   //! in populte make addition query so now we have 2 qeury
-  // .populate({ path: "category", select: "name -_id" });
-  res
-    .status(200)
-    .json({ result: subcategories.length, page, data: subcategories });
+  const apiFeatures = new ApiFeatures(subCatetegoryModel.find(), req.query)
+    .paginate(documentCounts)
+    .filter()
+    .sort()
+    .search()
+    .limitFields();
+  // Excute query
+  const { mongooseQuery, paginationResults } = apiFeatures;
+  const subCatategory = await mongooseQuery;
+  res.status(200).json({
+    result: subCatategory.length,
+    paginationResults,
+    data: subCatategory,
+  });
 });
 
 // @desc Get spesfic subcategory
@@ -76,28 +78,9 @@ exports.getSpecficSubCategory = asyncHandler(async (req, res, next) => {
 // @desc    Update category
 // @route   Put /api/v1/categories/:id
 // @access  Private
-exports.upateSubCategory = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const { name, category } = req.body;
-  const subCategory = await subCatetegoryModel.findByIdAndUpdate(
-    { _id: id },
-    { name, slug: slugify(name), category },
-    { new: true }
-  );
-  if (!subCategory) {
-    return next(new ApiErrors(`No subCategory for this ${id}`, 404));
-  }
-  res.status(200).json({ date: subCategory });
-});
+exports.upateSubCategory = factory.updateOne(subCatetegoryModel);
 
 // @desc    Delet subCategory
 // @route   Delete /api/v1/subcategory/:id
 // @access  Private
-exports.deleteSubCategory = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-  const subCategory = await subCatetegoryModel.findByIdAndRemove(id);
-  if (!subCategory) {
-    return next(new ApiErrors(`No subCategory for this ${id}`, 404));
-  }
-  res.status(204).send();
-});
+exports.deleteSubCategory = factory.deleteOne(subCatetegoryModel);
