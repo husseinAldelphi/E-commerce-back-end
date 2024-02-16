@@ -9,12 +9,7 @@ require("colors");
 // @desc   Create prodcut
 // @route  Post /api/v1/categories
 // @access Private
-exports.createProduct = asyncHandler(async (req, res) => {
-  req.body.slug = slugify(req.body.title);
-  const product = await productModel.create(req.body);
-
-  res.status(201).json({ data: product });
-});
+exports.createProduct = factory.createOne(productModel);
 
 // @desc   Get list of products
 // @route  Get /api/v1/products

@@ -20,3 +20,9 @@ exports.updateOne = (modelONe) =>
     }
     res.status(200).json({ date: document });
   });
+
+exports.createOne = (modelONe) =>
+  asyncHandler(async (req, res) => {
+    const newDocument = await modelONe.create(req.body);
+    res.status(201).json({ data: newDocument });
+  });

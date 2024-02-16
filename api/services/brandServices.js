@@ -7,12 +7,7 @@ const factory = require("./handlersFactory");
 // @desc   Create brand
 // @route  Post /api/v1/brands
 // @access Private
-exports.createBrand = asyncHandler(async (req, res) => {
-  const { name } = req.body;
-
-  const brand = await brandModel.create({ name, slug: slugify(name) });
-  res.status(201).json({ data: brand });
-});
+exports.createBrand = factory.createBrand(brandModel);
 
 // @desc   Get list of brands
 // @route  Get /api/v1/brands
@@ -51,7 +46,7 @@ exports.getBrand = asyncHandler(async (req, res, next) => {
 // @desc    Update brand
 // @route   Put /api/v1/brands/:id
 // @access  Private
-exports.updateBrand =  factory.updateOne(brandModel)
+exports.updateBrand = factory.updateOne(brandModel);
 
 // @desc    Delet brand
 // @route   Delete /api/v1/brands/:id

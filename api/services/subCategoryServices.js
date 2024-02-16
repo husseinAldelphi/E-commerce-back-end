@@ -1,7 +1,5 @@
-const { default: slugify } = require("slugify");
-
 const asyncHandler = require("express-async-handler");
-const subCatetegoryModel = require("../models/subCategoryModel");
+const subCategoryModel = require("../models/subCategoryModel");
 const ApiErrors = require("../utils/api_error");
 const ApiFeatures = require("../utils/apiFeatures");
 const factory = require("./handlersFactory");
@@ -22,16 +20,7 @@ exports.createFilterObj = (req, res, next) => {
 // @desc   Create subCatategory
 // @route  Post /api/v1/subcategories
 // @access Private
-exports.creatSubCategory = asyncHandler(async (req, res) => {
-  const { name, category } = req.body;
-
-  const subCategory = await subCatetegoryModel.create({
-    name: name,
-    slug: slugify(name),
-    category,
-  });
-  res.status(201).json({ data: subCategory });
-});
+exports.creatSubCategory = factory.createOne(subCategoryModel);
 
 // ↴↴ this called nested route   parent with his kids
 // Get /api/v1/categories/:categoryId/subgatories
@@ -41,9 +30,9 @@ exports.creatSubCategory = asyncHandler(async (req, res) => {
 // @access Public
 exports.getSubCategoris = asyncHandler(async (req, res) => {
   // build query
-  const documentCounts = await subCatetegoryModel.countDocuments();
+  const documentCounts = await subCategoryModel.countDocuments();
 
-  const apiFeatures = new ApiFeatures(subCatetegoryModel.find(), req.query)
+  const apiFeatures = new ApiFeatures(subCategoryModel.find(), req.query)
     .paginate(documentCounts)
     .filter()
     .sort()
@@ -65,7 +54,7 @@ exports.getSubCategoris = asyncHandler(async (req, res) => {
 exports.getSpecficSubCategory = asyncHandler(async (req, res, next) => {
   const { id } = req.params;
 
-  const subCategory = await subCatetegoryModel.findById(id);
+  const subCategory = await subCategoryModel.findById(id);
   // here we don't need to know the main category
   // .populate({ path: "category", select: "name -_id" });
   if (!subCategory) {
@@ -78,9 +67,9 @@ exports.getSpecficSubCategory = asyncHandler(async (req, res, next) => {
 // @desc    Update category
 // @route   Put /api/v1/categories/:id
 // @access  Private
-exports.upateSubCategory = factory.updateOne(subCatetegoryModel);
+exports.upateSubCategory = factory.updateOne(subCategoryModel);
 
 // @desc    Delet subCategory
 // @route   Delete /api/v1/subcategory/:id
 // @access  Private
-exports.deleteSubCategory = factory.deleteOne(subCatetegoryModel);
+exports.deleteSubCategory = factory.deleteOne(subCategoryModel);
