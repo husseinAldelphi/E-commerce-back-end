@@ -1,4 +1,5 @@
 const express = require("express");
+
 const {
   getCategoryValidator,
   createCategoryValidator,
@@ -7,6 +8,7 @@ const {
 } = require("../utils/validators/categoryValidator");
 
 const {
+  uploadCategoryImg,
   getCategoris,
   creatCategory,
   getCategory,
@@ -23,7 +25,7 @@ router.use("/:categoryId/subcategories", subCategorisRoute);
 router
   .route("/")
   .get(getCategoris)
-  .post(createCategoryValidator, creatCategory);
+  .post(uploadCategoryImg, createCategoryValidator, creatCategory);
 router
   .route("/:id")
   .get(getCategoryValidator, getCategory)

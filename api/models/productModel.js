@@ -46,7 +46,7 @@ const productSchema = new mongoose.Schema(
     subcategories: [
       { type: mongoose.Schema.ObjectId, required: true, ref: "SubCategory" },
     ],
-    
+
     brand: {
       type: mongoose.Schema.ObjectId,
       ref: "Brand",
@@ -64,5 +64,10 @@ const productSchema = new mongoose.Schema(
 
   { timestamps: true }
 );
+//@ mongose query middlwware
+productSchema.pre(/^find/, function (next) {     //?  /^find/ instead of "find" cuz we want both find and findById
+  this.populate({ path: "category", select: "name -_id" });
+  next();
+});
 
 module.exports = mongoose.model("Product", productSchema);

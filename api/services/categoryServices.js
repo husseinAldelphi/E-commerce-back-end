@@ -1,9 +1,33 @@
-const { default: slugify } = require("slugify");
-const asyncHandler = require("express-async-handler");
+/* eslint-disable import/no-extraneous-dependencies */
+const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
 const CategoryModel = require("../models/categoryModel");
-const ApiErrors = require("../utils/api_error");
-const ApiFeatures = require("../utils/apiFeatures");
 const factory = require("./handlersFactory");
+const ApiError = require("../utils/api_error");
+require("colors");
+
+const multerStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/category");
+  },
+  filename: function (req, file, cb) {
+    const ext = file.mimetype.split("/")[1]; //  mimetype: 'image/jpeg'
+    const filename = `category-${uuidv4()}-${Date.now()}.${ext}`;
+
+    cb(null, filename);
+  },
+});
+const multerFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image")) {
+    cb(null, true);
+  } else {
+    cb(new ApiError("Invalid file type you must provide an image", 400), false);
+  }
+};
+
+const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
+exports.uploadCategoryImg = upload.single("image");
+
 // @desc   Create category
 // @route  Post /api/v1/categories
 // @access Private
@@ -12,37 +36,11 @@ exports.creatCategory = factory.createOne(CategoryModel);
 // @desc   Get list of categories
 // @route  Get /api/v1/categories
 // @access Public
-exports.getCategoris = asyncHandler(async (req, res) => {
-  // build query
-  const documentCounts = await CategoryModel.countDocuments();
-
-  const apiFeatures = new ApiFeatures(CategoryModel.find(), req.query)
-    .paginate(documentCounts)
-    .filter()
-    .sort()
-    .search()
-    .limitFields();
-  // Excute query
-  const { mongooseQuery, paginationResults } = apiFeatures;
-  const categories = await mongooseQuery;
-  res
-    .status(200)
-    .json({ result: categories.length, paginationResults, data: categories });
-});
-
+exports.getCategoris = factory.getAll(CategoryModel);
 // @desc Get spesfic category
 // @route Get /api/v1/categories/:id
 // @access Public
-exports.getCategory = asyncHandler(async (req, res, next) => {
-  const { id } = req.params;
-
-  const category = await CategoryModel.findById(id);
-  if (!category) {
-    // res.status(404).json({ msg: `No category for this ${id}` });
-    return next(new ApiErrors(`No category for this ${id}`, 404));
-  }
-  res.status(200).json({ date: category });
-});
+exports.getCategory = factory.getOne(CategoryModel);
 
 // @desc    Update category
 // @route   Put /api/v1/categories/:id
