@@ -8,6 +8,7 @@ const {
 } = require("../utils/validators/categoryValidator");
 
 const {
+  resizeImg,
   uploadCategoryImg,
   getCategoris,
   creatCategory,
@@ -25,11 +26,11 @@ router.use("/:categoryId/subcategories", subCategorisRoute);
 router
   .route("/")
   .get(getCategoris)
-  .post(uploadCategoryImg, createCategoryValidator, creatCategory);
+  .post(uploadCategoryImg, resizeImg, createCategoryValidator, creatCategory);
 router
   .route("/:id")
   .get(getCategoryValidator, getCategory)
-  .put(updateCategoryValidator, upateCategory)
+  .put(uploadCategoryImg, resizeImg, updateCategoryValidator, upateCategory)
   .delete(deleteCategoryValidator, deleteCategory);
 
 module.exports = router;

@@ -1,3 +1,5 @@
+const path = require("path");
+
 const express = require("express");
 
 const app = express();
@@ -22,6 +24,7 @@ if (process.env.NODE_ENV === "devlopment") {
   console.log(`mode : ${process.env.NODE_ENV}`);
 }
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "uploads")));
 
 //! mount routes
 
@@ -49,5 +52,4 @@ process.on("unhandledRejection", (err) => {
     console.error("shutting down ......");
     process.exit(1);
   });
-  
 });

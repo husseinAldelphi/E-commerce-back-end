@@ -1,32 +1,39 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const multer = require("multer");
+const asyncHandler = require("express-async-handler");
 const { v4: uuidv4 } = require("uuid");
+const sharp = require("sharp");
 const CategoryModel = require("../models/categoryModel");
 const factory = require("./handlersFactory");
-const ApiError = require("../utils/api_error");
-require("colors");
 
-const multerStorage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/category");
-  },
-  filename: function (req, file, cb) {
-    const ext = file.mimetype.split("/")[1]; //  mimetype: 'image/jpeg'
-    const filename = `category-${uuidv4()}-${Date.now()}.${ext}`;
+const { uploadSingleImage } = require("../middlewares/uploadImage_middleware");
+// 1- dist storage
+// const multerStorage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, "uploads/category");
+//   },
+//   filename: function (req, file, cb) {
+//     const ext = file.mimetype.split("/")[1]; //  mimetype: 'image/jpeg'
+//     const filename = `category-${uuidv4()}-${Date.now()}.${ext}`;
 
-    cb(null, filename);
-  },
+//     cb(null, filename);
+//   },
+// });
+
+// };
+
+exports.uploadCategoryImg = uploadSingleImage("image");
+
+exports.resizeImg = asyncHandler(async (req, res, next) => {
+  const filename = `category-${uuidv4()}-${Date.now()}.jpeg`;
+  await sharp(req.file.buffer)
+    .resize(600, 600)
+    .toFormat("jpeg")
+    .jpeg({ quality: 90 })
+    .toFile(`uploads/category/${filename}`);
+  req.body.image = filename;
+  next();
 });
-const multerFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image")) {
-    cb(null, true);
-  } else {
-    cb(new ApiError("Invalid file type you must provide an image", 400), false);
-  }
-};
-
-const upload = multer({ storage: multerStorage, fileFilter: multerFilter });
-exports.uploadCategoryImg = upload.single("image");
 
 // @desc   Create category
 // @route  Post /api/v1/categories
